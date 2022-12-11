@@ -42,6 +42,7 @@ class TransformerDataModule(pl.LightningDataModule):
         dataset_config_name: Optional[str] = None,
         revision: Optional[Union[str, Version]] = None,
         train_val_split: Optional[int] = None,
+        seed: Optional[int] = None,
         train_file: Optional[str] = None,
         test_file: Optional[str] = None,
         predict_file: Optional[str] = None,
@@ -69,6 +70,7 @@ class TransformerDataModule(pl.LightningDataModule):
         self.dataset_config_name = dataset_config_name
         self.revision = revision
         self.train_val_split = train_val_split
+        self.seed = seed
         self.train_file = train_file
         self.test_file = test_file
         self.predict_file = predict_file
@@ -147,7 +149,7 @@ class TransformerDataModule(pl.LightningDataModule):
 
     def split_dataset(self, dataset: Union[Dataset, DatasetDict]) -> Union[Dataset, DatasetDict]:
         if self.train_val_split is not None:
-            split = dataset["train"].train_test_split(self.train_val_split)
+            split = dataset["train"].train_test_split(self.train_val_split, seed=self.seed)
             dataset["train"] = split["train"]
             dataset["validation"] = split["test"]
         dataset = self._select_samples(dataset)
