@@ -14,6 +14,8 @@
 from typing import Any, Dict, List, Type, Union
 
 import torch
+from typing_extensions import Literal
+
 import transformers
 from torchmetrics import Accuracy, F1Score, Precision, Recall
 from transformers.models.auto.auto_factory import _BaseAutoModelClass
@@ -36,11 +38,13 @@ class TokenClassificationTransformer(TaskTransformer):
         *args,
         labels: Union[int, List[str]],
         downstream_model_type: Type[_BaseAutoModelClass] = transformers.AutoModelForTokenClassification,
+        task: Literal["binary", "multiclass", "multilabel"] = "multiclass",
         **kwargs,
     ) -> None:
         num_labels = labels if isinstance(labels, int) else len(labels)
         super().__init__(downstream_model_type, *args, num_labels=num_labels, **kwargs)
         self._num_labels = num_labels
+        self.task = task
         self.metrics = {}
 
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -65,10 +69,10 @@ class TokenClassificationTransformer(TaskTransformer):
         return self.common_step("test", batch)
 
     def configure_metrics(self, _) -> None:
-        self.prec = Precision(num_classes=self.num_labels)
-        self.recall = Recall(num_classes=self.num_labels)
-        self.f1 = F1Score(num_classes=self.num_labels)
-        self.acc = Accuracy()
+        self.prec = Precision(num_classes=self.num_labels, task=self.task)
+        self.recall = Recall(num_classes=self.num_labels, task=self.task)
+        self.f1 = F1Score(num_classes=self.num_labels, task=self.task)
+        self.acc = Accuracy(num_classes=self.num_labels, task=self.task)
         self.metrics = {"precision": self.prec, "recall": self.recall, "accuracy": self.acc, "f1": self.f1}
 
     @property
